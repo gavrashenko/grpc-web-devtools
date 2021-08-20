@@ -9,18 +9,20 @@ window.__GRPCWEB_DEVTOOLS__ = function (clients) {
   var StreamInterceptor = function (method, request, stream) {
     this._callbacks = {};
     const methodType = "server_streaming";
+    const plainRequest = JSON.parse(JSON.stringify(request.toObject()));
     window.postMessage({
       type: postType,
       method,
       methodType,
-      request: request.toObject(),
+      request: plainRequest,
     });
     stream.on('data', response => {
+      const plainResponse = JSON.parse(JSON.stringify(response.toObject()));
       window.postMessage({
         type: postType,
         method,
         methodType,
-        response: response.toObject(),
+        response: plainResponse,
       });
       if (!!this._callbacks['data']) {
         this._callbacks['data'](response);
@@ -70,12 +72,14 @@ window.__GRPCWEB_DEVTOOLS__ = function (clients) {
       var posted = false;
       var newCallback = function (err, response) {
         if (!posted) {
+          const plainRequest = JSON.parse(JSON.stringify(request.toObject()));
+          const plainResponse = JSON.parse(JSON.stringify(response.toObject()));
           window.postMessage({
             type: postType,
             method,
             methodType: "unary",
-            request: request.toObject(),
-            response: err ? undefined : response.toObject(),
+            request: plainRequest,
+            response: err ? undefined : plainResponse,
             error: err || undefined,
           }, "*")
           posted = true;
