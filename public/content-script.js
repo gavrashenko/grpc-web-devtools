@@ -73,13 +73,13 @@ window.__GRPCWEB_DEVTOOLS__ = function (clients) {
       var newCallback = function (err, response) {
         if (!posted) {
           const plainRequest = JSON.parse(JSON.stringify(request.toObject()));
-          const plainResponse = JSON.parse(JSON.stringify(response.toObject()));
+          const plainResponse = err ? undefined : JSON.parse(JSON.stringify(response.toObject()));
           window.postMessage({
             type: postType,
             method,
             methodType: "unary",
             request: plainRequest,
-            response: err ? undefined : plainResponse,
+            response: plainResponse,
             error: err || undefined,
           }, "*")
           posted = true;
