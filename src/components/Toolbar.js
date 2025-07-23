@@ -3,7 +3,7 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { setPreserveLog, clearLog } from '../state/network';
-import { toggleFilter, setFilterValue } from '../state/toolbar';
+import { toggleFilter, setFilterValue, toggleExactMatch } from '../state/toolbar';
 import { toggleClipboard } from "../state/clipboard";
 import ClearIcon from '../icons/Clear';
 import FilterIcon from '../icons/Filter';
@@ -12,7 +12,7 @@ import './Toolbar.css';
 class Toolbar extends Component {
 
   _renderButtons() {
-    const { clearLog, toggleFilter, toolbar: { filterIsEnabled, filterIsOpen }} = this.props;
+    const { clearLog, toggleFilter, toolbar: { filterIsEnabled, filterIsOpen }, exactMatch } = this.props;
     return (
         <>
           <ToolbarButton title="Clear" onClick={() => clearLog({ force: true })} >
@@ -25,6 +25,16 @@ class Toolbar extends Component {
            >
              <FilterIcon />
            </ToolbarButton>
+          <ToolbarDivider />
+          <span className="toolbar-item checkbox" title="Use exact text matching instead of fuzzy search">
+              <input
+                type="checkbox"
+                id="ui-checkbox-exact-match"
+                checked={exactMatch}
+                onChange={this._onExactMatchChanged}
+              />
+              <label htmlFor="ui-checkbox-exact-match">Exact match</label>
+            </span>
         </>
     )
   }
@@ -55,7 +65,7 @@ class Toolbar extends Component {
       <>
         <div className="toolbar">
           <div className="toolbar-shadow">
-            {this._renderButtons()}           
+            {this._renderButtons()}
             <ToolbarDivider />
             <span className="toolbar-item checkbox" title="Do not clear log on page reload / navigation">
               <input
@@ -97,6 +107,11 @@ class Toolbar extends Component {
     const { setFilterValue } = this.props;
     setFilterValue(e.target.value);
   }
+
+  _onExactMatchChanged = e => {
+    const { toggleExactMatch } = this.props;
+    toggleExactMatch();
+  }
 }
 
 class ToolbarDivider extends Component {
@@ -122,6 +137,7 @@ const mapStateToProps = state => ({
   preserveLog: state.network.preserveLog,
   toolbar: state.toolbar,
   clipboardIsEnabled: state.clipboard.clipboardIsEnabled,
+  exactMatch: state.network._exactMatch,
 });
-const mapDispatchToProps = { setPreserveLog, clearLog, toggleFilter, setFilterValue, toggleClipboard };
+const mapDispatchToProps = { setPreserveLog, clearLog, toggleFilter, setFilterValue, toggleClipboard, toggleExactMatch };
 export default connect(mapStateToProps, mapDispatchToProps)(Toolbar);

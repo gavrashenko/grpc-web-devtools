@@ -8,6 +8,7 @@ const toolbarSlice = createSlice({
     filterIsOpen: true,
     filterIsEnabled: false,
     filterValue: "",
+    exactMatch: false,
   },
   reducers: {
     toggleFilter(state) {
@@ -17,12 +18,15 @@ const toolbarSlice = createSlice({
       const { payload } = action;
       state.filterValue = payload;
       state.filterIsEnabled = !!(state.filterValue && state.filterValue.length > 0);
+    },
+    toggleExactMatch(state) {
+      state.exactMatch = !state.exactMatch;
     }
   },
 
 });
 
 const { actions, reducer } = toolbarSlice;
-export const { toggleFilter, setFilterValue } = actions;
+export const { toggleFilter, setFilterValue, toggleExactMatch } = actions;
 
 export default reducer

@@ -6,6 +6,16 @@ import { selectLogEntry } from '../state/network';
 import MethodIcon from './MethodIcon';
 
 class NetworkListRow extends PureComponent {
+  formatTime(timestamp) {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+    const milliseconds = date.getMilliseconds().toString().padStart(3, '0');
+    return `${hours}:${minutes}:${seconds}.${milliseconds}`;
+  }
+
   render() {
     const { index, data, style, selectLogEntry, selectedIdx } = this.props;
     const log = data[index];
@@ -16,8 +26,13 @@ class NetworkListRow extends PureComponent {
         onClick={() => selectLogEntry(index)
         }
       >
-        <MethodIcon methodType={log.methodType} isRequest={!!log.request} />
-        {log.endpoint}
+        <div className="row-content">
+          <div className="row-left">
+            <MethodIcon methodType={log.methodType} isRequest={!!log.request} />
+            {log.endpoint}
+          </div>
+          <span className="timestamp">{this.formatTime(log.timestamp)}</span>
+        </div>
       </div >
     );
   }

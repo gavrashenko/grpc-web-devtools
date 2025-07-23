@@ -2,7 +2,7 @@
 
 import { createSlice } from "redux-starter-kit";
 import Fuse from 'fuse.js';
-import { setFilterValue } from "./toolbar";
+import { setFilterValue, toggleExactMatch } from "./toolbar";
 
 var options = {
   shouldSort: false,
@@ -24,6 +24,7 @@ const networkSlice = createSlice({
     ],
     _filterValue: '',
     _logBak: [],
+    _exactMatch: false,
   },
   reducers: {
     networkLog(state, action) {
@@ -35,8 +36,24 @@ const networkSlice = createSlice({
       }
       if (_filterValue.length > 0) {
         _logBak.push(payload);
-        fuse.setCollection(_logBak);
-        state.log = fuse.search(_filterValue);
+        if (state._exactMatch) {
+          state.log = _logBak.filter(entry => {
+            if (!entry.method && !entry.endpoint) return false;
+            
+            // Check exact match against method or endpoint
+            const method = entry.method || '';
+            const endpoint = entry.endpoint || '';
+            
+            // For exact match, the filter value should exactly match the endpoint or be the exact method name
+            return endpoint === _filterValue || method === _filterValue || 
+                   method.endsWith('/' + _filterValue) || // matches /Service/MethodName when searching for MethodName
+                   endpoint.toLowerCase() === _filterValue.toLowerCase() ||
+                   method.toLowerCase() === _filterValue.toLowerCase();
+          });
+        } else {
+          fuse.setCollection(_logBak);
+          state.log = fuse.search(_filterValue);
+        }
       } else {
         log.push(payload);
       }
@@ -66,8 +83,8 @@ const networkSlice = createSlice({
   },
   extraReducers: {
     [setFilterValue]: (state, action) => {
-
       const { payload: filterValue = '' } = action;
+      
       state._filterValue = filterValue;
       if (filterValue.length === 0) {
         state.log = state._logBak;
@@ -78,8 +95,61 @@ const networkSlice = createSlice({
       if (state._logBak.length === 0 && state.log.length !== 0) {
         state._logBak = state.log;
       }
-      fuse.setCollection(state._logBak);
-      state.log = fuse.search(filterValue);
+
+      if (state._exactMatch) {
+        // Use exact match filtering - match exact method names or endpoint names
+        state.log = state._logBak.filter(entry => {
+          if (!entry.method && !entry.endpoint) return false;
+          
+          // Check exact match against method or endpoint
+          const method = entry.method || '';
+          const endpoint = entry.endpoint || '';
+          
+          // For exact match, the filter value should exactly match the endpoint or be the exact method name
+          return endpoint === filterValue || method === filterValue || 
+                 method.endsWith('/' + filterValue) || // matches /Service/MethodName when searching for MethodName
+                 endpoint.toLowerCase() === filterValue.toLowerCase() ||
+                 method.toLowerCase() === filterValue.toLowerCase();
+        });
+      } else {
+        // Use fuzzy search
+        fuse.setCollection(state._logBak);
+        state.log = fuse.search(filterValue);
+      }
+    },
+    [toggleExactMatch]: (state, action) => {
+      state._exactMatch = !state._exactMatch;
+      
+      // Re-apply current filter with new match mode
+      const filterValue = state._filterValue;
+      if (filterValue.length === 0) {
+        return;
+      }
+
+      if (state._logBak.length === 0 && state.log.length !== 0) {
+        state._logBak = state.log;
+      }
+
+      if (state._exactMatch) {
+        // Use exact match filtering - match exact method names or endpoint names
+        state.log = state._logBak.filter(entry => {
+          if (!entry.method && !entry.endpoint) return false;
+          
+          // Check exact match against method or endpoint
+          const method = entry.method || '';
+          const endpoint = entry.endpoint || '';
+          
+          // For exact match, the filter value should exactly match the endpoint or be the exact method name
+          return endpoint === filterValue || method === filterValue || 
+                 method.endsWith('/' + filterValue) || // matches /Service/MethodName when searching for MethodName
+                 endpoint.toLowerCase() === filterValue.toLowerCase() ||
+                 method.toLowerCase() === filterValue.toLowerCase();
+        });
+      } else {
+        // Use fuzzy search
+        fuse.setCollection(state._logBak);
+        state.log = fuse.search(filterValue);
+      }
     },
   },
 });
