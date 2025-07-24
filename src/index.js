@@ -10,20 +10,44 @@ import networkReducer, { networkLog, clearLog } from './state/network';
 import toolbarReducer from './state/toolbar';
 import clipboardReducer from './state/clipboard';
 
-var port, tabId
-// Setup port for communication with the background script
-if (chrome) {
-  try {
-    tabId = chrome.devtools.inspectedWindow.tabId;
-    port = chrome.runtime.connect(null, { name: "panel" });
-    port.postMessage({ tabId, action: "init" });
-    port.onMessage.addListener(_onMessageRecived);
-    chrome.tabs.onUpdated.addListener(_onTabUpdated);
+var port, tabId, reconnectTimer;
 
-  } catch (error) {
-    console.warn("not running app in chrome extension panel")
+// Setup port for communication with the background script
+function setupConnection() {
+  if (chrome) {
+    try {
+      tabId = chrome.devtools.inspectedWindow.tabId;
+      port = chrome.runtime.connect(null, { name: "panel" });
+      port.postMessage({ tabId, action: "init" });
+      port.onMessage.addListener(_onMessageRecived);
+      
+      // Handle disconnection and attempt reconnection
+      port.onDisconnect.addListener(() => {
+        console.warn("DevTools panel disconnected, attempting to reconnect...");
+        port = null;
+        
+        // Clear any existing reconnect timer
+        if (reconnectTimer) {
+          clearTimeout(reconnectTimer);
+        }
+        
+        // Attempt to reconnect after a short delay
+        reconnectTimer = setTimeout(() => {
+          setupConnection();
+        }, 1000);
+      });
+      
+      chrome.tabs.onUpdated.addListener(_onTabUpdated);
+      console.log("DevTools panel connected successfully");
+
+    } catch (error) {
+      console.warn("not running app in chrome extension panel")
+    }
   }
 }
+
+// Initialize connection
+setupConnection();
 
 const store = configureStore({
   reducer: {
@@ -51,4 +75,3 @@ ReactDOM.render(
   </Provider>,
   document.getElementById('root')
 );
-
